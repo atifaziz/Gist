@@ -7,13 +7,13 @@ for (var e = new Enumerator(disks); !e.atEnd(); e.moveNext()) {
     var disk = e.item();
     if (null == disk.Size || null == disk.FreeSpace)
         continue;
+    var size = parseFloat(disk.Size), free = parseFloat(disk.FreeSpace);
     WScript.Echo(disk.DeviceID 
-                 + ' ' 
-                 + prettyByteSize(disk.FreeSpace) 
-                 + ' of ' 
-                 + prettyByteSize(disk.Size)
+                 + ('  ' + (free / size * 100).toFixed(0) + '%').slice(-4)
                  + ' or '
-                 + ('  ' + (disk.FreeSpace / disk.Size * 100).toFixed(0) + '%').slice(-4)
+                 + prettyByteSize(free)
+                 + ' of '
+                 + prettyByteSize(size)
                  + ' free');
 }
 function prettyByteSize(size, precision) {
