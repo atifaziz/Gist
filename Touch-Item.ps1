@@ -32,7 +32,7 @@ function Touch-Item
             {
                 if (!$force)
                 {
-                    Write-Warning "Skipping file $fn as it is read-only. Use -Force to still touch the file."
+                    Write-Warning "Skipping file ""$file"" as it is read-only. Use -Force to still touch the file."
                     continue
                 }
 
