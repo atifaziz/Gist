@@ -19,13 +19,14 @@ function Get-ProcessTree
     [CmdletBinding()]
     param([string]$ComputerName,
           [int]$IndentSize = 2)
-    
+
     $computerName = ($computerName, ".")[[String]::IsNullOrEmpty($computerName)]
-    $processes = Get-WmiObject Win32_Process -ComputerName $computerName
-    $pids = $processes | select -ExpandProperty ProcessId
-    $parents = $processes | select -ExpandProperty ParentProcessId -Unique
-    $liveParents = $parents | ? { $pids -contains $_ }
-    $deadParents = Compare-Object -ReferenceObject $parents -DifferenceObject $liveParents | select -ExpandProperty InputObject
+    $processes    = Get-WmiObject Win32_Process -ComputerName $computerName
+    $pids         = $processes | select -ExpandProperty ProcessId
+    $parents      = $processes | select -ExpandProperty ParentProcessId -Unique
+    $liveParents  = $parents | ? { $pids -contains $_ }
+    $deadParents  = Compare-Object -ReferenceObject $parents -DifferenceObject $liveParents `
+                  | select -ExpandProperty InputObject
 
     function Write-ProcessTree($process, [int]$level = 0)
     {
@@ -37,7 +38,7 @@ function Get-ProcessTree
         $process `
         | Add-Member NoteProperty ParentId $parentProcessId -PassThru `
         | Add-Member NoteProperty Level $level -PassThru `
-        | Add-Member NoteProperty IdentedName $label -PassThru 
+        | Add-Member NoteProperty IndentedName $label -PassThru
         $processes `
         | ? { $_.ParentProcessId -eq $id } `
         | % { Write-ProcessTree $_ ($level + 1) }
@@ -48,6 +49,6 @@ function Get-ProcessTree
     | % { Write-ProcessTree $_ }
 }
 
-<# Usage: 
-Get-ProcessTree | select Id, Level, IdentedName, ParentId
+<# Usage:
+Get-ProcessTree | select Id, Level, IndentedName, ParentId
 #>
