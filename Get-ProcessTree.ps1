@@ -20,7 +20,7 @@ function Get-ProcessTree
     param([string]$ComputerName,
           [int]$IndentSize = 2)
 
-	$indentSize   = [Math]::Max(1, [Math]::Min(12, $indentSize))
+    $indentSize   = [Math]::Max(1, [Math]::Min(12, $indentSize))
     $computerName = ($computerName, ".")[[String]::IsNullOrEmpty($computerName)]
     $processes    = Get-WmiObject Win32_Process -ComputerName $computerName
     $pids         = $processes | select -ExpandProperty ProcessId
