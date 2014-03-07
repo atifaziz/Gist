@@ -17,8 +17,7 @@
 function Get-ProcessTree
 {
     [CmdletBinding()]
-    param([string]$ComputerName,
-          [int]$IndentSize = 2)
+    param([string]$ComputerName, [int]$IndentSize = 2)
 
     $indentSize   = [Math]::Max(1, [Math]::Min(12, $indentSize))
     $computerName = ($computerName, ".")[[String]::IsNullOrEmpty($computerName)]
