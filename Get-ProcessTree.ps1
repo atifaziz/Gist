@@ -28,6 +28,7 @@ function Get-ProcessTree
     $liveParents  = $parents | ? { $pids -contains $_ }
     $deadParents  = Compare-Object -ReferenceObject $parents -DifferenceObject $liveParents `
                   | select -ExpandProperty InputObject
+    $processByParent = $processes | Group-Object -AsHashTable ParentProcessId
 
     function Write-ProcessTree($process, [int]$level = 0)
     {
@@ -39,8 +40,8 @@ function Get-ProcessTree
         | Add-Member NoteProperty ParentId $parentProcessId -PassThru `
         | Add-Member NoteProperty Level $level -PassThru `
         | Add-Member NoteProperty IndentedName "$indent$($process.Name)" -PassThru
-        $processes `
-        | ? { $_.ParentProcessId -eq $id } `
+        $processByParent.Item($id) `
+        | ? { $_ } `
         | % { Write-ProcessTree $_ ($level + 1) }
     }
 
@@ -50,5 +51,5 @@ function Get-ProcessTree
 }
 
 <# Usage:
-Get-ProcessTree | select Id, Level, IndentedName, ParentId
+Get-ProcessTree -Verbose | select Id, Level, IndentedName, ParentId
 #>
