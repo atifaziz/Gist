@@ -35,11 +35,10 @@ function Get-ProcessTree
         $parentProcessId = $process.ParentProcessId
         $process = Get-Process -Id $id -ComputerName $computerName
         $indent = New-Object String(' ', ($level * $indentSize))
-        $label = "$indent$($process.Name)"
         $process `
         | Add-Member NoteProperty ParentId $parentProcessId -PassThru `
         | Add-Member NoteProperty Level $level -PassThru `
-        | Add-Member NoteProperty IndentedName $label -PassThru
+        | Add-Member NoteProperty IndentedName "$indent$($process.Name)" -PassThru
         $processes `
         | ? { $_.ParentProcessId -eq $id } `
         | % { Write-ProcessTree $_ ($level + 1) }
