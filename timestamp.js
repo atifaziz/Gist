@@ -1,5 +1,6 @@
 // Windows (WSH) script to timestamp each line from input
 // Copyright (c) 2015 Atif Aziz
+// Portions Copyright 2010-2015 Mike Bostock
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files
@@ -20,6 +21,185 @@
 // TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-var stdin = WScript.StdIn, stdout = WScript.StdOut;
+function interval(floori, count) {
+
+    var t0 = new Date, t1 = new Date;
+
+    function interval(date) {
+        return floori(date = new Date(+date)), date;
+    }
+
+    if (count) interval.count = function (start, end) {
+        t0.setTime(+start), t1.setTime(+end);
+        floori(t0), floori(t1);
+        return Math.floor(count(t0, t1));
+    };
+
+    return interval;
+}
+
+var day = interval(
+    function (date) { date.setHours(0, 0, 0, 0); },
+    function (start, end) { return (end - start - (end.getTimezoneOffset() - start.getTimezoneOffset()) * 6e4) / 864e5; });
+
+var year = interval(
+    function (date) { date.setHours(0, 0, 0, 0); date.setMonth(0, 1); },
+    function (start, end) { return end.getFullYear() - start.getFullYear(); });
+
+
+function weekday(i) {
+    return interval(
+        function (date) { date.setHours(0, 0, 0, 0);
+                          date.setDate(date.getDate() - (date.getDay() + 7 - i) % 7); },
+        function (start, end) { return (end - start - (end.getTimezoneOffset() - start.getTimezoneOffset()) * 6e4) / 6048e5; });
+}
+
+var sunday = weekday(0);
+var monday = weekday(1);
+
+var locale = {
+    dateTime   : '%a %b %e %X %Y',
+    date       : '%m/%d/%Y',
+    time       : '%H:%M:%S',
+    periods    : ['AM', 'PM'],
+    days       : ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+    shortDays  : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+    months     : ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+    shortMonths: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+};
+
+function pad(value, fill, width) {
+    var sign = value < 0 ? "-" : "",
+        string = (sign ? -value : value) + "",
+        length = string.length;
+    return sign + (length < width ? new Array(width - length + 1).join(fill) + string : string);
+}
+
+function formatShortWeekday    (d)    { return locale.shortDays[d.getDay()];          }
+function formatWeekday         (d)    { return locale.days[d.getDay()];               }
+function formatShortMonth      (d)    { return locale.shortMonths[d.getMonth()];      }
+function formatMonth           (d)    { return locale.months[d.getMonth()];           }
+function formatPeriod          (d)    { return locale.periods[+(d.getHours() >= 12)]; }
+function formatDayOfMonth      (d, p) { return pad(d.getDate(), p, 2);                }
+function formatHour24          (d, p) { return pad(d.getHours(), p, 2);               }
+function formatHour12          (d, p) { return pad(d.getHours() % 12 || 12, p, 2);    }
+function formatDayOfYear       (d, p) { return pad(1 + day.count(year(d), d), p, 3);  }
+function formatMilliseconds    (d, p) { return pad(d.getMilliseconds(), p, 3);        }
+function formatMonthNumber     (d, p) { return pad(d.getMonth() + 1, p, 2);           }
+function formatMinutes         (d, p) { return pad(d.getMinutes(), p, 2);             }
+function formatSeconds         (d, p) { return pad(d.getSeconds(), p, 2);             }
+function formatWeekNumberSunday(d, p) { return pad(sunday.count(year(d), d), p, 2);   }
+function formatWeekdayNumber   (d)    { return d.getDay();                            }
+function formatWeekNumberMonday(d, p) { return pad(monday.count(year(d), d), p, 2);   }
+function formatYear            (d, p) { return pad(d.getFullYear() % 100, p, 2);      }
+function formatFullYear        (d, p) { return pad(d.getFullYear() % 10000, p, 4);    }
+function formatZone(d) {
+    var z = d.getTimezoneOffset();
+    return (z > 0 ? '-' : (z *= -1, '+'))
+         + pad(z / 60 | 0, '0', 2)
+         + pad(z % 60, '0', 2);
+}
+
+var formats = {
+    'a': formatShortWeekday,
+    'A': formatWeekday,
+    'b': formatShortMonth,
+    'B': formatMonth,
+    'c': null,
+    'd': formatDayOfMonth,
+    'e': formatDayOfMonth,
+    'H': formatHour24,
+    'I': formatHour12,
+    'j': formatDayOfYear,
+    'L': formatMilliseconds,
+    'm': formatMonthNumber,
+    'M': formatMinutes,
+    'p': formatPeriod,
+    'S': formatSeconds,
+    'U': formatWeekNumberSunday,
+    'w': formatWeekdayNumber,
+    'W': formatWeekNumberMonday,
+    'x': null,
+    'X': null,
+    'y': formatYear,
+    'Y': formatFullYear,
+    'Z': formatZone,
+    '%': function() { return "%"; }
+};
+
+var pads = { '-': '', '_': ' ', '0': '0' };
+
+function format(specifier, formats) {
+    return function (date) {
+        var string = [],
+            i = -1,
+            j = 0,
+            n = specifier.length,
+            c,
+            pad,
+            format;
+
+        while (++i < n) {
+            if (specifier.charCodeAt(i) === 37) {
+                string.push(specifier.slice(j, i));
+                if ((pad = pads[c = specifier.charAt(++i)]) != null) c = specifier.charAt(++i);
+                else pad = c === 'e' ? ' ' : '0';
+                if (format = formats[c]) c = format(date, pad);
+                string.push(c);
+                j = i + 1;
+            }
+        }
+
+        string.push(specifier.slice(j, i));
+        return string.join('');
+    };
+}
+
+formats.c = format(locale.dateTime, formats);
+formats.x = format(locale.date, formats);
+formats.X = format(locale.time, formats);
+
+var args = WScript.Arguments,
+    stdin = WScript.StdIn,
+    stdout = WScript.StdOut,
+    stderr = WScript.StdErr;
+var tsfmt = args.length > 0
+          ? format(args(0), formats)
+          : function (d) { return d + ':'; };
 while (!stdin.AtEndOfStream)
-    stdout.WriteLine(new Date() + ': ' + stdin.ReadLine());
+    stdout.WriteLine(tsfmt(new Date()) + stdin.ReadLine());
+
+// The formatting code is dervided from the d3-time-format[1] project.
+// [1] https://github.com/d3/d3-time-format
+
+/* -------------------------- d3-time-format LICENSE --------------------------
+
+Copyright 2010-2015 Mike Bostock
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this
+list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
+
+* Neither the name of the author nor the names of contributors may be used to
+  endorse or promote products derived from this software without specific prior
+  written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+-----------------------------------------------------------------------------*/
