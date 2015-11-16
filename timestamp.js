@@ -20,15 +20,7 @@
 // TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-var args = WScript.Arguments,
-    stdin = WScript.StdIn,
-    stdout = WScript.StdOut,
-    stderr = WScript.StdErr;
-var count = args.length > 0 ? parseInt(args(0)) : 0;
-if (isNaN(count)) {
-    stderr.WriteLine('Invalid argument');
-    WScript.Quit(1);
-}
+var stdin = WScript.StdIn, stdout = WScript.StdOut;
 var readln = function(ts) { return ts.AtEndOfStream ? null : ts.ReadLine(); }
 for (var line = readln(stdin); line != null; line = readln(stdin)) {
     stdout.WriteLine(new Date() + ': ' + line);
