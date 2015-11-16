@@ -20,8 +20,6 @@
 // TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-var stdin = WScript.StdIn, stdout = WScript.StdOut;
-var readln = function(ts) { return ts.AtEndOfStream ? null : ts.ReadLine(); }
-for (var line = readln(stdin); line != null; line = readln(stdin)) {
-    stdout.WriteLine(new Date() + ': ' + line);
-}
+while (!WScript.StdIn.AtEndOfStream)
+    WScript.StdOut.WriteLine(new Date() + ': ' + line);
+
