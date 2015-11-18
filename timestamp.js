@@ -21,6 +21,27 @@
 // TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+Array.prototype.forEach = function (callback, thisArg) {
+    var len = this.length >>> 0;
+    for (var i = 0; i < len; i++)
+        if (i in this) callback.call(thisArg, this[i], i, this);
+};
+
+Array.prototype.map = function (callback, thisArg) {
+    var result = [];
+    this.forEach(function (item, idx, arr) {
+         result.push(callback.call(this, item, idx, arr));
+    }, thisArg);
+    return result;
+};
+
+Object.prototype.keys = function () {
+    var keys = [];
+    for (var k in this)
+        if (this.hasOwnProperty(k)) keys.push(k);
+    return keys;
+};
+
 function interval(floori, count) {
 
     var t0 = new Date, t1 = new Date;
@@ -101,31 +122,32 @@ function formatZone(d) {
 }
 
 var formats = {
-    'a': formatShortWeekday,
-    'A': formatWeekday,
-    'b': formatShortMonth,
-    'B': formatMonth,
-    'c': null,
-    'd': formatDayOfMonth,
-    'e': formatDayOfMonth,
-    'H': formatHour24,
-    'I': formatHour12,
-    'j': formatDayOfYear,
-    'L': formatMilliseconds,
-    'm': formatMonthNumber,
-    'M': formatMinutes,
-    'p': formatPeriod,
-    'S': formatSeconds,
-    'U': formatWeekNumberSunday,
-    'w': formatWeekdayNumber,
-    'W': formatWeekNumberMonday,
-    'x': null,
-    'X': null,
-    'y': formatYear,
-    'Y': formatFullYear,
-    'Z': formatZone,
-    '%': function() { return "%"; }
+    'a': { f: formatShortWeekday         , h: 'abbreviated weekday name.'                                  },
+    'A': { f: formatWeekday              , h: 'full weekday name.'                                         },
+    'b': { f: formatShortMonth           , h: 'abbreviated month name.'                                    },
+    'B': { f: formatMonth                , h: 'full month name.'                                           },
+    'c': { f: null                       , h: 'the locale’s date and time, such as %a %b %e %H:%M:%S %Y.'  },
+    'd': { f: formatDayOfMonth           , h: 'zero-padded day of the month as a decimal number [01,31].'  },
+    'e': { f: formatDayOfMonth           , h: 'space-padded day of the month as a decimal number [ 1,31].' },
+    'H': { f: formatHour24               , h: 'hour (24-hour clock) as a decimal number [00,23].'          },
+    'I': { f: formatHour12               , h: 'hour (12-hour clock) as a decimal number [01,12].'          },
+    'j': { f: formatDayOfYear            , h: 'day of the year as a decimal number [001,366].'             },
+    'L': { f: formatMilliseconds         , h: 'month as a decimal number [01,12].'                         },
+    'm': { f: formatMonthNumber          , h: 'minute as a decimal number [00,59].'                        },
+    'M': { f: formatMinutes              , h: 'milliseconds as a decimal number [000,999].'                },
+    'p': { f: formatPeriod               , h: 'either AM or PM.'                                           },
+    'S': { f: formatSeconds              , h: 'second as a decimal number [00,61].'                        },
+    'U': { f: formatWeekNumberSunday     , h: 'Sunday-based week of the year as a decimal number [00,53].' },
+    'w': { f: formatWeekdayNumber        , h: 'Sunday-based weekday as a decimal number [0,6].'            },
+    'W': { f: formatWeekNumberMonday     , h: 'Monday-based week of the year as a decimal number [00,53].' },
+    'x': { f: null                       , h: 'the locale’s date, such as %m/%d/%Y.'                       },
+    'X': { f: null                       , h: 'the locale’s time, such as %H:%M:%S.'                       },
+    'y': { f: formatYear                 , h: 'year without century as a decimal number [00,99].'          },
+    'Y': { f: formatFullYear             , h: 'year with century as a decimal number.'                     },
+    'Z': { f: formatZone                 , h: 'time zone offset, such as -0700, -07:00, -07, or Z.'        },
+    '%': { f: function () { return "%"; }, h: 'a literal percent sign (%).'                                }
 };
+
 
 var pads = { '-': '', '_': ' ', '0': '0' };
 
@@ -144,7 +166,7 @@ function format(specifier, formats) {
                 string.push(specifier.slice(j, i));
                 if ((pad = pads[c = specifier.charAt(++i)]) != null) c = specifier.charAt(++i);
                 else pad = c === 'e' ? ' ' : '0';
-                if (format = formats[c]) c = format(date, pad);
+                if (format = formats[c]) c = format.f(date, pad);
                 string.push(c);
                 j = i + 1;
             }
@@ -155,19 +177,59 @@ function format(specifier, formats) {
     };
 }
 
-formats.c = format(locale.dateTime, formats);
-formats.x = format(locale.date, formats);
-formats.X = format(locale.time, formats);
+formats.c.f = format(locale.dateTime, formats);
+formats.x.f = format(locale.date, formats);
+formats.X.f = format(locale.time, formats);
 
 var args = WScript.Arguments,
     stdin = WScript.StdIn,
     stdout = WScript.StdOut,
     stderr = WScript.StdErr;
-var tsfmt = args.length > 0
+
+var console = { log: function (s) { stdout.WriteLine(s); } };
+
+var arg = args.length > 0
+        ? args(0)
+        : null;
+
+if (/^-(\?|h|-help)$/.test(arg)) {
+
+    var now = new Date();
+
+    var help = [
+        'Timestamp 1.0',
+        'Copyright (c) 2015 Atif Aziz.',
+        'Portions Copyright 2010-2015 Mike Bostock.',
+        '',
+        'Prefixes each line from STDIN with a timestamp.',
+        '',
+        'Usage: timestamp [ SPECIFIER ]',
+        '',
+        'SPECIFIER may contain the following directives:',
+        '',
+        function () {
+            return formats.keys().map(function (d) { return '  %' + d + ' - ' + formats[d].h; });
+        },
+        '',
+        'Examples of what each directive yields for the current date & time of',
+        now + ':',
+        '',
+        function () {
+            return formats.keys().map(function (d) { return '  %' + d + ' => ' + format('%' + d, formats)(now); });
+        },
+    ];
+
+    Array.prototype.concat.apply([], help.map(function (h) { return typeof h === 'function' ? h() : h; }))
+                          .forEach(console.log);
+
+    WScript.Quit(0);
+}
+
+var tsfmt = arg != null
           ? format(args(0), formats)
           : function (d) { return d + ':'; };
 while (!stdin.AtEndOfStream)
-    stdout.WriteLine(tsfmt(new Date()) + stdin.ReadLine());
+    console.log(tsfmt(new Date()) + stdin.ReadLine());
 
 // The formatting code is dervided from the d3-time-format[1] project.
 // [1] https://github.com/d3/d3-time-format
