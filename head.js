@@ -33,6 +33,7 @@ var readln = function(ts) { return ts.AtEndOfStream ? null : ts.ReadLine(); }
 if (count >= 0) {
     for (var line = readln(stdin); count-- > 0 && line != null; line = readln(stdin))
         stdout.WriteLine(line);
+    while (readln(stdin)) { /* NOP */ }
 }
 else {
     var lines = [];
