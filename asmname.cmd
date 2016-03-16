@@ -1,1 +1,1 @@
-@csi "%~dp0an.csx" -- %*
+@csi "%~dpn0.csx" -- %*
