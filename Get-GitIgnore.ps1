@@ -14,10 +14,10 @@
 
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-    [string[]]$Ignore,
     [Parameter(Mandatory=$true)]
     [string]$LocalGitIgnoreClone,
+    [Parameter(ValueFromPipeline=$true)]
+    [string[]]$Ignore,
     [switch]$CreateFile,
     [string]$OutFile,
     [switch]$Force,
@@ -45,46 +45,55 @@ BEGIN {
 
 PROCESS {
 
-    $ignore `
-    | % {
+    if (-not $Ignore) {
 
-        Write-Verbose "Searching for a template for $_"
+        dir -Recurse -File (Join-Path $localGitIgnoreClone  *.gitignore) |
+            select -ExpandProperty Name |
+            % { $_ -replace '\.gitignore$', '' }
 
-        [IO.FileInfo[]]$files =
-            dir -Recurse -File (Join-Path $localGitIgnoreClone "$_.gitignore")
+    } else {
 
-        if (-not $files) {
-            Write-Error "Missing ignore template for $_."
-        }
+        $ignore `
+        | % {
 
-        if ($files.Length -gt 1) {
-            Write-Error "Ambiguous templates ($($files.Length)) for $_."
-        }
+            Write-Verbose "Searching for a template for $_"
 
-        $file = $files[0]
-        Write-Verbose "$_ -> $file"
+            [IO.FileInfo[]]$files =
+                dir -Recurse -File (Join-Path $localGitIgnoreClone "$_.gitignore")
 
-        $heading =
-            if ($withHeading) {
+            if (-not $files) {
+                Write-Error "Missing ignore template for $_."
+            }
+
+            if ($files.Length -gt 1) {
+                Write-Error "Ambiguous templates ($($files.Length)) for $_."
+            }
+
+            $file = $files[0]
+            Write-Verbose "$_ -> $file"
+
+            $heading =
+                if ($withHeading) {
 @"
 #-----------------------------------------------------------------------
 # $_
 #
 "@
+                }
+
+            if ($heading) {
+                if ($outFile) {
+                    echo $heading | Add-Content -Encoding Ascii $outFile
+                } else {
+                    echo $heading
+                }
             }
 
-        if ($heading) {
             if ($outFile) {
-                echo $heading | Add-Content -Encoding Ascii $outFile
+                type $file | Add-Content -Encoding Ascii $outFile
             } else {
-                echo $heading
+                type $file
             }
-        }
-
-        if ($outFile) {
-            type $file | Add-Content -Encoding Ascii $outFile
-        } else {
-            type $file
         }
     }
 }
