@@ -279,7 +279,7 @@ if (showHelp) {
 
 var tsfmt = arg
           ? format(arg, formats)
-          : function (d) { return d + ':'; };
+          : function (d) { return d.toString() + ':'; };
 
 while (!stdin.AtEndOfStream) {
     console.log(tsfmt(time()) + stdin.ReadLine());
