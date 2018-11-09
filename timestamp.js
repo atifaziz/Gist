@@ -181,20 +181,67 @@ formats.c.f = format(locale.dateTime, formats);
 formats.x.f = format(locale.date, formats);
 formats.X.f = format(locale.time, formats);
 
-var args = WScript.Arguments,
-    stdin = WScript.StdIn,
+function UTCDate(d) { this.d = typeof d === 'undefined' ? new Date() : new Date(+d); }
+
+UTCDate.prototype.getFullYear       = function () { return this.d.getUTCFullYear();     };
+UTCDate.prototype.getMonth          = function () { return this.d.getUTCMonth();        };
+UTCDate.prototype.getDate           = function () { return this.d.getUTCDate();         };
+UTCDate.prototype.getDay            = function () { return this.d.getUTCDay();          };
+UTCDate.prototype.getHours          = function () { return this.d.getUTCHours();        };
+UTCDate.prototype.getMinutes        = function () { return this.d.getUTCMinutes();      };
+UTCDate.prototype.getSeconds        = function () { return this.d.getUTCSeconds();      };
+UTCDate.prototype.getMilliseconds   = function () { return this.d.getUTCMilliseconds(); };
+UTCDate.prototype.getTimezoneOffset = function () { return 0;                           };
+UTCDate.prototype.valueOf           = function () { return this.d.getTime();            };
+
+UTCDate.prototype.setMonth = function (m, d) { return this.d.setUTCMonth(m, d); };
+UTCDate.prototype.setDate  = function (d) { return this.d.setUTCDate(d); };
+UTCDate.prototype.setHours = function (h, m, s, ms) { return this.d.setUTCHours(h, m, s, ms); };
+UTCDate.prototype.setTime  = function (v) { return this.d.setTime(v); };
+
+UTCDate.prototype.toString = function () { return format('%a %b %-e %H:%M:%S UTC%Z %Y', formats)(this); };
+
+var stdin = WScript.StdIn,
     stdout = WScript.StdOut,
     stderr = WScript.StdErr;
 
 var console = { log: function (s) { stdout.WriteLine(s); } };
 
-var arg = args.length > 0
-        ? args(0)
-        : null;
+var args = (function (args) {
+    var result = [];
+    for (var i = 0; i < args.length; i++)
+        result.push(args(i));
+    return result;
+})(WScript.Arguments);
 
-if (/^-(\?|h|-help)$/.test(arg)) {
+var arg,
+    showHelp = false,
+    time = function () { return new Date(); },
+    specifier;
 
-    var now = new Date();
+while (!showHelp && typeof specifier === 'undefined' && (arg = args.shift())) {
+    switch (arg) {
+        case '-h':
+        case '-?':
+        case '--help':
+            showHelp = true;
+            break;
+        case '-u':
+            time = function () { return new UTCDate(); };
+            break;
+        default:
+            if (arg[0] === '-')
+                throw new Error('Invalid argument: ' + arg);
+            specifier = arg;
+            break;
+    }
+}
+
+var now;
+
+if (showHelp) {
+
+    now = time();
 
     var help = [
         'Timestamp 1.0',
@@ -203,7 +250,12 @@ if (/^-(\?|h|-help)$/.test(arg)) {
         '',
         'Prefixes each line from STDIN with a timestamp.',
         '',
-        'Usage: timestamp [ SPECIFIER ]',
+        'Usage: timestamp OPTIONS [ SPECIFIER ]',
+        '',
+        'where OPTIONS are:',
+        '',
+        '-u             changes timestamp to be in UTC',
+        '-h|-?|--help   displays this help',
         '',
         'SPECIFIER may contain the following directives:',
         '',
@@ -225,11 +277,13 @@ if (/^-(\?|h|-help)$/.test(arg)) {
     WScript.Quit(0);
 }
 
-var tsfmt = arg != null
-          ? format(args(0), formats)
+var tsfmt = arg
+          ? format(arg, formats)
           : function (d) { return d + ':'; };
-while (!stdin.AtEndOfStream)
-    console.log(tsfmt(new Date()) + stdin.ReadLine());
+
+while (!stdin.AtEndOfStream) {
+    console.log(tsfmt(time()) + stdin.ReadLine());
+}
 
 // The formatting code is dervided from the d3-time-format[1] project.
 // [1] https://github.com/d3/d3-time-format
