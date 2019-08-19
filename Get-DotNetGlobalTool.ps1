@@ -3,9 +3,10 @@ dotnet tool list -g |
     % {
         $tokens = $_ -split ' +', 3;
         [pscustomobject]@{
-            PackageId = $tokens[0]
-            Version   = [version]$tokens[1]
-            Command   = $tokens[2]
+            PackageId       = $tokens[0]
+            Version         = [version]($tokens[1] -split '-', 2)[0]
+            VersionSuffix   = ($tokens[1] -split '-', 2)[1]
+            Command         = $tokens[2]
         }
     } |
     ? { $_.PackageId -match '^[a-z]([a-z0-9.-]*[a-z0-9])?$' }
