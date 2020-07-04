@@ -25,7 +25,7 @@ for (var e = new Enumerator(disks); !e.atEnd(); e.moveNext()) {
     if (null == disk.Size || null == disk.FreeSpace)
         continue;
     var size = parseFloat(disk.Size), free = parseFloat(disk.FreeSpace);
-    WScript.Echo(disk.DeviceID 
+    WScript.Echo(disk.DeviceID
                  + ('  ' + (free / size * 100).toFixed(0) + '%').slice(-4)
                  + ' or '
                  + prettyByteSize(free)
@@ -34,7 +34,7 @@ for (var e = new Enumerator(disks); !e.atEnd(); e.moveNext()) {
                  + ' free');
 }
 function prettyByteSize(size, precision) {
-    var OneKiloByte = 1024.0, 
+    var OneKiloByte = 1024.0,
         OneMegaByte = OneKiloByte * 1024.0,
         OneGigaByte = OneMegaByte * 1024.0;
     var suffix;
@@ -59,7 +59,7 @@ function prettyByteSize(size, precision) {
         suffix = ' byte';
         ignorePrecision = true;
     }
-    else 
+    else
     {
         suffix = ' bytes';
         ignorePrecision = true;

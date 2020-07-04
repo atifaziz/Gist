@@ -19,17 +19,17 @@ type ByteSizeFormatProvider() =
 
     let defaultFormat format formatProvider (arg : obj) =
         match arg with
-        | :? IFormattable as formattable -> formattable.ToString(format, formatProvider) 
+        | :? IFormattable as formattable -> formattable.ToString(format, formatProvider)
         | _ -> arg.ToString()
 
     interface IFormatProvider with
-        member this.GetFormat(formatType) = 
+        member this.GetFormat(formatType) =
             if formatType = typeof<ICustomFormatter> then this :> obj else null
 
     interface ICustomFormatter with
         member this.Format(format, arg, formatProvider) =
-            if (format = null 
-                || not (format.StartsWith(formatSpecifier, StringComparison.Ordinal)) 
+            if (format = null
+                || not (format.StartsWith(formatSpecifier, StringComparison.Ordinal))
                 || arg :? string) then
                 arg |> defaultFormat format formatProvider
             else
@@ -38,7 +38,7 @@ type ByteSizeFormatProvider() =
                 match size with
                 | None -> arg |> defaultFormat format formatProvider
                 | Some(size) ->
-                    let (size, suffix, ignorePrecision) = 
+                    let (size, suffix, ignorePrecision) =
                         if      (size > gigaByte) then (size / gigaByte, "GB", false)
                         else if (size > megaByte) then (size / megaByte, "MB", false)
                         else if (size > kiloByte) then (size / kiloByte, "KB", false)

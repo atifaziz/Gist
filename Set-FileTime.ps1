@@ -15,9 +15,9 @@ function Set-FileTime
         [Parameter(ParameterSetName='template')] [switch]$SetLastWriteTime
     )
 
-    PROCESS 
+    PROCESS
     {
-        ForEach ($path In $path) 
+        ForEach ($path In $path)
         {
             $file = Get-Item $path -ea Stop | ? { (-not $_.PSIsContainer) }
 

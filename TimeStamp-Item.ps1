@@ -8,9 +8,9 @@ function TimeStamp-Item
         [switch]$Force = $false
     )
 
-    PROCESS 
+    PROCESS
     {
-        ForEach ($path In $path) 
+        ForEach ($path In $path)
         {
             $file = Get-Item $path -ea Stop | ? { (-not $_.PSIsContainer) }
             if ($file -eq $null)
@@ -22,14 +22,14 @@ function TimeStamp-Item
             $baseName = [IO.Path]::GetFileNameWithoutExtension($file.Name)
             if ($baseName -match '^(.+?)_[0-9]{8}_[0-9]{6}$')
             {
-                if (-not $force) 
-                { 
+                if (-not $force)
+                {
                     Write-Verbose "Skipping file that already appears time-stamped: $path"
-                    continue 
+                    continue
                 }
-                $baseName = $matches[1]                
-            }            
-            $newName = "$($baseName)_$($file.LastWriteTimeUtc.ToString('yyyyMMdd_HHmmss'))$ext"            
+                $baseName = $matches[1]
+            }
+            $newName = "$($baseName)_$($file.LastWriteTimeUtc.ToString('yyyyMMdd_HHmmss'))$ext"
             Rename-Item $file $newName
         }
     }

@@ -22,9 +22,9 @@ function Touch-Item
         [switch]$Force = $false
     )
 
-    PROCESS 
+    PROCESS
     {
-        ForEach ($path In $path) 
+        ForEach ($path In $path)
         {
             $file = Get-Item $path -ea Stop `
                   | ? { !$_.PSIsContainer `
@@ -39,7 +39,7 @@ function Touch-Item
             {
                 continue
             }
-            
+
             $attributes = $file.Attributes
             $ro = [IO.FileAttributes]::ReadOnly -eq ($attributes -band [IO.FileAttributes]::ReadOnly)
             if ($ro)
@@ -52,7 +52,7 @@ function Touch-Item
 
                 $file.Attributes = $attributes -band (-bnot [IO.FileAttributes]::ReadOnly)
             }
-            
+
             $file.LastWriteTime = Get-Date
             if ($ro)
             {
@@ -63,7 +63,7 @@ function Touch-Item
         }
     }
 }
- 
-<#    
+
+<#
 dir * | Touch-Item -WhatIf
 #>
