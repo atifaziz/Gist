@@ -24,7 +24,7 @@ function TimeStamp-Item
             {
                 if (-not $force)
                 {
-                    Write-Verbose "Skipping file that already appears time-stamped: $path"
+                    Write-Warning "Skipping file that already appears time-stamped: $path"
                     continue
                 }
                 $baseName = $matches[1]
