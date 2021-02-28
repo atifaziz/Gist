@@ -25,7 +25,7 @@
 [CmdletBinding()]
 param()
 
-Invoke-RestMethod https://github.com/dotnet/core/raw/master/release-notes/releases-index.json |
+Invoke-RestMethod https://dotnetcli.blob.core.windows.net/dotnet/release-metadata/releases-index.json |
    Select-Object -ExpandProperty 'releases-index' |
    Select-Object `
        @{ N = 'ChannelVersion'; E = 'channel-version' },
