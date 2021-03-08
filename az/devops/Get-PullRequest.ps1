@@ -58,6 +58,27 @@ param ([Parameter(ParameterSetName='Checkout', Mandatory=$true)]
        [Parameter(ParameterSetName='List')]
        [switch]$PassThru)
 
+if (!(Get-Command -ErrorAction SilentlyContinue az))
+{
+    throw "Azure CLI is required, but does not appear to be installed on this system. See https://docs.microsoft.com/en-us/cli/azure/install-azure-cli for installation instructions."
+}
+
+$azExtensions = az extension list | ConvertFrom-Json | Select-Object -ExpandProperty name
+if ($LASTEXITCODE)
+{
+    throw "Failed to list Azure CLI extensions (exit code = $LASTEXITCODE)."
+}
+
+if ('azure-devops' -notin $azExtensions)
+{
+    Write-Verbose "Installing Azure CLI extension ""azure-devops""."
+    az extension add --name azure-devops
+    if ($LASTEXITCODE)
+    {
+        throw "Installation of Azure CLI extension ""azure-devops"" failed (exit code = $LASTEXITCODE)."
+    }
+}
+
 $prettyQuery = '
     [*].{ id    : codeReviewId,
           title : title,
