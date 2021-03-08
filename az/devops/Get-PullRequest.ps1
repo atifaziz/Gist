@@ -1,3 +1,5 @@
+#Requires -PSEdition Core
+
 <#
  # MIT License
  #
