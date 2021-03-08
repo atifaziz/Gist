@@ -45,7 +45,7 @@
     formatted output.
 #>
 
-[CmdletBinding(SupportsShouldProcess)]
+[CmdletBinding(SupportsShouldProcess, DefaultParameterSetName='List')]
 param ([Parameter(ParameterSetName='Checkout', Mandatory=$true)]
        [string]$Checkout,
        [Parameter(ParameterSetName='Checkout')]
