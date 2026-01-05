@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param([int]$Top = 10, [switch]$LongHash = $false)
 
 git rev-list --objects --all |

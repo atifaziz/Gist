@@ -46,4 +46,3 @@ type ByteSizeFormatProvider() =
                         else                           (size, " bytes", true)
                     let precision = if ignorePrecision then "0" else format.Substring(formatSpecifier.Length)
                     size.ToString(getPrecisionFormat precision, formatProvider) + suffix
-
