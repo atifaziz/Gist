@@ -145,7 +145,7 @@ param (
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $true
 
-$preparedPromptFile = "$(Split-Path -Leaf $preparedPromptFile)$($suffix)$(Split-Path -Extension $preparedPromptFile)"
+$preparedPromptFile = "$(Split-Path -LeafBase $preparedPromptFile)$($suffix)$(Split-Path -Extension $preparedPromptFile)"
 
 # Determine base branch if not specified using common names like "main" or "master"
 if (!$base) {
